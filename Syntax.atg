@@ -1,0 +1,68 @@
+﻿using Compiler;
+using System.Collections.Generic;
+
+COMPILER Syntax
+
+    public ProgramNode RootNode;
+
+
+
+/*--------------------------------------------------------------------------------------*/
+
+IGNORECASE
+
+CHARACTERS
+    whitespace      = " \t" .
+    newline         = "\r\n" .
+    notNewline      = ANY - newline .
+    quote           = '"' .
+    notQuote        = ANY - newline - '"' .
+    digit           = "0123456789" .
+    letter          = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_" .
+
+TOKENS
+    comment         = "//" {notNewline} .
+    identifier      = letter {letter | digit} .
+    func            = "func" .
+    print           = "print" .
+    return          = "return" .
+    continue        = "continue" .
+    if              = "if" .
+    then            = "then" .
+    else            = "else" .
+    end             = "end" .
+    while           = "while" .
+    do              = "do" .
+    var             = "var" .
+    assignment      = ":=" .
+    integer         = digit {digit} .
+    string          = quote {notQuote} quote .
+    
+IGNORE
+    "\t" + newline
+
+
+
+/*--------------------------------------------------------------------------------------*/
+ 
+PRODUCTIONS
+
+Syntax = (                      (. FunctionNode f; RootNode = new ProgramNode(); .)
+    Function<out f>             (. RootNode.Functions.Add(f); .)
+    {
+        Function<out f>         (. RootNode.Functions.Add(f); .)
+    }
+).
+
+Function<out FunctionNode f> = (
+    func 
+    identifier                      (. f = new FunctionNode(t.val); .)
+    '(' [
+        identifier                  (. f.Parameters.Add(new VariableNode(t.val)); .)
+        {
+            ',' identifier          (. f.Parameters.Add(new VariableNode(t.val)); .)
+        }
+    ] ')'
+).
+
+END Syntax .
