@@ -1,46 +1,84 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Compiler
 {
     public abstract class SyntaxNode
     {
+        public abstract IEnumerable<SyntaxNode> GetChildren();
     }
 
     public class ProgramNode : SyntaxNode
     {
-        public List<FunctionNode> Functions { get; set; }
+        public List<FunctionNode> Functions { get; private set; }
 
         public ProgramNode()
         {
             Functions = new List<FunctionNode>();
         }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return Functions;
+        }
     }
 
     public class FunctionNode : SyntaxNode
     {
-        public string Name { get; set; }
-        public List<VariableNode> Parameters { get; set; }
+        public IdentifierNode Name { get; private set; }
+        public List<IdentifierNode> Parameters { get; private set; }
+        public BlockNode Body { get; set; }
 
-        public FunctionNode(string name)
+        public FunctionNode(IdentifierNode name)
         {
             Name = name;
-            Parameters = new List<VariableNode>();
+            Parameters = new List<IdentifierNode>();
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return new SyntaxNode[] {Name}.Concat(Parameters).Concat(new[] {Body});
         }
     }
 
-    public abstract class StatementNode
+    public abstract class StatementNode : SyntaxNode
     {
         
     }
 
     public class BlockNode : StatementNode
     {
-        
+        public List<DeclarationNode> Declarations { get; private set; }
+        public List<StatementNode> Statements { get; private set; }
+
+        public BlockNode()
+        {
+            Declarations = new List<DeclarationNode>();
+            Statements = new List<StatementNode>();
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return Declarations.Cast<SyntaxNode>().Concat(Statements);
+        }
     }
 
     public class AssignmentStatementNode : StatementNode
     {
-        
+        public IdentifierNode Variable { get; private set; }
+        public ExpressionNode Expression { get; private set; }
+
+        public AssignmentStatementNode(IdentifierNode variable, ExpressionNode expression)
+        {
+            Variable = variable;
+            Expression = expression;
+        }
+
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return new SyntaxNode[] {Variable, Expression};
+        }
     }
 
     public class ReturnStatementNode : StatementNode
@@ -88,16 +126,26 @@ namespace Compiler
         
     }
 
-    public class DeclarationNode
+    public class DeclarationNode : SyntaxNode
     {
-        
+        public List<IdentifierNode> Variables { get; private set; }
+
+        public DeclarationNode()
+        {
+            Variables = new List<IdentifierNode>();
+        }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            return Variables;
+        }
     }
 
-    public class VariableNode : SyntaxNode
+    public class IdentifierNode : SyntaxNode
     {
         public string Name { get; set; }
 
-        public VariableNode(string name)
+        public IdentifierNode(string name)
         {
             Name = name;
         }

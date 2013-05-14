@@ -54,15 +54,51 @@ Syntax = (                      (. FunctionNode f; RootNode = new ProgramNode();
     }
 ).
 
-Function<out FunctionNode f> = (
+Function<out FunctionNode f> = (    (. IdentifierNode i; .)
     func 
-    identifier                      (. f = new FunctionNode(t.val); .)
+    Identifier<out i>               (. f = new FunctionNode(i); .)
     '(' [
-        identifier                  (. f.Parameters.Add(new VariableNode(t.val)); .)
+        Identifier<out i>           (. f.Parameters.Add(i); .)
         {
-            ',' identifier          (. f.Parameters.Add(new VariableNode(t.val)); .)
+            ',' Identifier<out i>   (. f.Parameters.Add(i); .)
         }
     ] ')'
+    Block<out b>                    (. f.Body = b; .)
+).
+
+Identifier<out IdentifierNode i> = (
+    identifier  (. i = new IdentifierNode(t.val); .)
+).
+
+Block<out BlockNode b> = (          (. DeclarationNode d; StatementNode s; b = new BlockNode(); .)
+    '{'
+        {
+            Declaration<out d>      (. b.Declarations.Add(d); .)
+        }
+        {
+            Statement<out s>        (. b.Statements.Add(s); .)
+    '}'
+).
+
+Declaration<out DeclarationNode d> = (  (. IdentifierNode i; d = new DeclarationNode(); .)
+    var Identifier<out i>               (. d.Variables.Add(i); .)
+    {
+        Identifier<out i>               (. d.Variables.Add(i); .) 
+    }
+).
+
+Statement<out StatementNode s> = (  (. AssignmentStatementNode a; ReturnStatementNode r; PrintStatementNode p; NullStatementNode n; IfStatementNode i; WhileStatementNode w; BlockStatementNode b; .)
+    AssignmentStatement<out a>      (. s = a; .)
+    | ReturnStatement<out r>        (. s = r; .)
+    | PrintStatement<out p>         (. s = p; .)
+    | NullStatement<out n>          (. s = n; .)
+    | IfStatement<out i>            (. s = i; .)
+    | WhileStatement<out w>         (. s = w; .)
+    | Block<out b>                  (. s = b; .)
+).
+
+AssignmentStatement<out AssignmentStatementNode a> = (  (. IdentifierNode i; ExpressionNode e; .)
+    Identifier<out i> assignment Expression<out e>      (. a = new AssignmentStatementNode(v, e); .)
 ).
 
 END Syntax .
