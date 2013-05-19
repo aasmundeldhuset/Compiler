@@ -27,14 +27,16 @@ TOKENS
     print           = "print" .
     return          = "return" .
     continue        = "continue" .
+    break           = "break" .
     if              = "if" .
     then            = "then" .
     else            = "else" .
     end             = "end" .
     while           = "while" .
     do              = "do" .
+    done            = "done" .
     var             = "var" .
-    assignment      = ":=" .
+    assignment      = "=" .
     integer         = digit {digit} .
     string          = quote {notQuote} quote .
     
@@ -77,6 +79,7 @@ Block<out BlockNode b> = (          (. DeclarationNode d; StatementNode s; b = n
         }
         {
             Statement<out s>        (. b.Statements.Add(s); .)
+        }
     '}'
 ).
 
@@ -99,6 +102,74 @@ Statement<out StatementNode s> = (  (. AssignmentStatementNode a; ReturnStatemen
 
 AssignmentStatement<out AssignmentStatementNode a> = (  (. IdentifierNode i; ExpressionNode e; .)
     Identifier<out i> assignment Expression<out e>      (. a = new AssignmentStatementNode(v, e); .)
+).
+
+ReturnStatement<out ReturnStatementNode r> = (  (. ExpressionNode e; .)
+    return Expression<out e>                    (. r = new ReturnStatementNode(e); .)
+).
+
+PrintStatement<out PrintStatementNode p> = (    (. IPrintItemNode pi; p = new PrintStatementNode(); .)
+    PrintItem<out pi>                           (. p.Items.Add(pi); .)
+    {
+        PrintItem<out pi>                       (. p.Items.Add(pi); .)
+    }
+).
+
+NullStatement<out NullStatementNode n> = (  (. NullStatementNode n; .)
+    continue                                (. n = new NullStatementNode(NullStatementType.Continue); .)
+    | break                                 (. n = new NullStatementNode(NullStatementType.Break); .)
+).
+
+PrintItem<out IPrintItemNode p> = ( (. ExpressionNode e; StringNode s; .)
+    Expression<out e>               (. p = e; .)
+    | String<out s>                 (. p = s; .)
+).
+
+String<out StringNode s> = (
+    string                      (. s = new StringNode(t.val); .)
+).
+
+Integer<out IntegerNode i> = (
+    integer                     (. i = new IntegerNode(t.val); .)
+).
+
+IfStatement<out IfStatementNode i> = (  (. Expression condition; Statement thenBody; Statement elseBody; .)
+    if Expression<out condition> 
+    then Statement<out thenBody> 
+    endif                               (. i = new IfStatementNode(condition, thenBody); .)
+    |
+    if Expression<out condition> 
+    then Statement<out thenBody> 
+    else Statement<out elseBody> 
+    endif                               (. i = new IfStatementNode(condition, thenBody, elseBody); .)
+).
+
+WhileStatement<out WhileStatementNode w> = (                    (. Expression condition; Statement body; .)
+    while Expression<out condition> do Statement<out body> done (. w = new WhileStatementNode(condition, body); .)
+).
+
+Expression<out ExpressionNode e> = (                    (. ExpressionNode left, right, child, arg; IntegerNode i; IdentifierNode id, name; FunctionCallNode f; .)
+      Expression<out left> '+'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.Add, right); .)
+    | Expression<out left> '-'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.Subtract, right); .)
+    | Expression<out left> '*'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.Multiply, right); .)
+    | Expression<out left> '/'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.Divide, right); .)
+    | Expression<out left> '==' Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.Equal, right); .)
+    | Expression<out left> '!=' Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.NotEqual, right); .)
+    | Expression<out left> '<'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.LessThan, right); .)
+    | Expression<out left> '<=' Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.LessThanOrEqual, right); .)
+    | Expression<out left> '>'  Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.GreaterThan, right); .)
+    | Expression<out left> '>=' Expression<out right>   (. e = new BinaryExpressionNode(left, Operator.GreaterThanOrEqual, right); .)
+    | '-' Expression<out child>                         (. e = new UnaryExpressionNode(Operator.Subtract, child); .)
+    | '(' Expression<out child> ')'                     (. e = child; .)
+    | IntegerNode<out i>                                (. e = new ConstantExpressionNode(i); .)
+    | IdentifierNode<out id>                            (. e = new VariableReferenceNode(id); .)
+    | IdentifierNode<out name>                          (. e = f = new FunctionCallNode(name); .)
+      '(' [
+            ExpressionNode<out arg>                     (. f.Arguments.Add(arg); .)
+            {
+                ',' ExpressionNode<out arg>             (. f.Arguments.Add(arg); .)
+            }
+      ] ')'
 ).
 
 END Syntax .
