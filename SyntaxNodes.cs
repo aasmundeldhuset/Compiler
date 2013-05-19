@@ -28,6 +28,8 @@ namespace Compiler
         public IdentifierNode Name { get; private set; }
         public List<IdentifierNode> Parameters { get; private set; }
         public BlockStatementNode Body { get; set; }
+        public SymbolTableEntry SymbolTableEntry { get; set; }
+        public int LocalVariablesSize { get; set; }
 
         public FunctionNode(IdentifierNode name)
         {
@@ -38,6 +40,11 @@ namespace Compiler
         public IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[] {Name}.Concat(Parameters).Concat(new[] {Body});
+        }
+
+        public override string ToString()
+        {
+            return "Function: " + Name + " " + SymbolTableEntry + " " + LocalVariablesSize;
         }
     }
 
@@ -310,6 +317,7 @@ namespace Compiler
     public class IdentifierNode : ISyntaxNode
     {
         public string Name { get; private set; }
+        public SymbolTableEntry SymbolTableEntry { get; set; }
 
         public IdentifierNode(string name)
         {
@@ -323,7 +331,7 @@ namespace Compiler
 
         public override string ToString()
         {
-            return "Identifier: " + Name;
+            return "Identifier: " + Name + " " + SymbolTableEntry;
         }
     }
 

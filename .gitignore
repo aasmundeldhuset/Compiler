@@ -4,3 +4,4 @@ obj
 Parser.cs
 Scanner.cs
 _ReSharper.*
+*.old

@@ -7,6 +7,8 @@ namespace Compiler
         public static void Main(string[] args)
         {
             var parser = ParserWrapper.Parse(@"E:\Presentations\2013-05 - Compiler\notsosimple.vsl", Console.Out);
+            var symbolTable = new SymbolTable();
+            symbolTable.FindSymbols(parser.RootNode);
             Print(parser.RootNode, 0);
             Console.WriteLine("Done");
             Console.ReadKey();

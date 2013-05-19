@@ -47,6 +47,8 @@
     <Compile Include="Parser.cs" />
     <Compile Include="ParserWrapper.cs" />
     <Compile Include="Scanner.cs" />
+    <Compile Include="ScopeStack.cs" />
+    <Compile Include="SymbolTable.cs" />
     <Compile Include="SyntaxNodes.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
