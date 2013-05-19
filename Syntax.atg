@@ -54,14 +54,16 @@ IGNORE
  
 PRODUCTIONS
 
-Syntax = (                      (. FunctionNode f; RootNode = new ProgramNode(); .)
+Syntax =                        (. FunctionNode f; RootNode = new ProgramNode(); .)
+(
     Function<out f>             (. RootNode.Functions.Add(f); .)
     {
         Function<out f>         (. RootNode.Functions.Add(f); .)
     }
 ).
 
-Function<out FunctionNode f> = (    (. IdentifierNode i; .)
+Function<out FunctionNode f> =      (. IdentifierNode i; BlockStatementNode b; .)
+(
     func 
     Identifier<out i>               (. f = new FunctionNode(i); .)
     '(' [
@@ -73,11 +75,13 @@ Function<out FunctionNode f> = (    (. IdentifierNode i; .)
     Block<out b>                    (. f.Body = b; .)
 ).
 
-Identifier<out IdentifierNode i> = (
+Identifier<out IdentifierNode i> =
+(
     identifier  (. i = new IdentifierNode(t.val); .)
 ).
 
-Block<out BlockNode b> = (          (. DeclarationNode d; StatementNode s; b = new BlockNode(); .)
+Block<out BlockStatementNode b> =   (. DeclarationNode d; StatementNode s; b = new BlockStatementNode(); .)
+(
     '{'
         {
             Declaration<out d>      (. b.Declarations.Add(d); .)
@@ -88,14 +92,16 @@ Block<out BlockNode b> = (          (. DeclarationNode d; StatementNode s; b = n
     '}'
 ).
 
-Declaration<out DeclarationNode d> = (  (. IdentifierNode i; d = new DeclarationNode(); .)
+Declaration<out DeclarationNode d> =    (. IdentifierNode i; d = new DeclarationNode(); .)
+(
     var Identifier<out i>               (. d.Variables.Add(i); .)
     {
         "," Identifier<out i>           (. d.Variables.Add(i); .) 
     }
 ).
 
-Statement<out StatementNode s> = (  (. AssignmentStatementNode a; ReturnStatementNode r; PrintStatementNode p; NullStatementNode n; IfStatementNode i; WhileStatementNode w; BlockStatementNode b; .)
+Statement<out StatementNode s> =    (. s = null; AssignmentStatementNode a; ReturnStatementNode r; PrintStatementNode p; NullStatementNode n; IfStatementNode i; WhileStatementNode w; BlockStatementNode b; .)
+(
     AssignmentStatement<out a>      (. s = a; .)
     | ReturnStatement<out r>        (. s = r; .)
     | PrintStatement<out p>         (. s = p; .)
@@ -105,40 +111,48 @@ Statement<out StatementNode s> = (  (. AssignmentStatementNode a; ReturnStatemen
     | Block<out b>                  (. s = b; .)
 ).
 
-AssignmentStatement<out AssignmentStatementNode a> = (  (. IdentifierNode i; ExpressionNode e; .)
-    Identifier<out i> assignment Expression<out e>      (. a = new AssignmentStatementNode(v, e); .)
+AssignmentStatement<out AssignmentStatementNode a> =    (. IdentifierNode i; ExpressionNode e; .)
+(
+    Identifier<out i> assignment Expression<out e>      (. a = new AssignmentStatementNode(i, e); .)
 ).
 
-ReturnStatement<out ReturnStatementNode r> = (  (. ExpressionNode e; .)
+ReturnStatement<out ReturnStatementNode r> =    (. ExpressionNode e; .)
+(
     return Expression<out e>                    (. r = new ReturnStatementNode(e); .)
 ).
 
-PrintStatement<out PrintStatementNode p> = (    (. IPrintItemNode pi; p = new PrintStatementNode(); .)
+PrintStatement<out PrintStatementNode p> =      (. IPrintItemNode pi; p = new PrintStatementNode(); .)
+(
     print PrintItem<out pi>                     (. p.Items.Add(pi); .)
     {
         "," PrintItem<out pi>                   (. p.Items.Add(pi); .)
     }
 ).
 
-NullStatement<out NullStatementNode n> = (  (. NullStatementNode n; .)
+NullStatement<out NullStatementNode n> =    (. n = null; .)
+(
     continue                                (. n = new NullStatementNode(NullStatementType.Continue); .)
     | break                                 (. n = new NullStatementNode(NullStatementType.Break); .)
 ).
 
-PrintItem<out IPrintItemNode p> = ( (. ExpressionNode e; StringNode s; .)
+PrintItem<out IPrintItemNode p> =   (. p = null; ExpressionNode e; StringNode s; .)
+(
     Expression<out e>               (. p = e; .)
     | String<out s>                 (. p = s; .)
 ).
 
-String<out StringNode s> = (
+String<out StringNode s> =
+(
     string                      (. s = new StringNode(t.val); .)
 ).
 
-Integer<out IntegerNode i> = (
+Integer<out IntegerNode i> =
+(
     integer                     (. i = new IntegerNode(t.val); .)
 ).
 
-IfStatement<out IfStatementNode i> = (  (. Expression condition; Statement thenBody; Statement elseBody = null; .)
+IfStatement<out IfStatementNode i> =    (. ExpressionNode condition; StatementNode thenBody, elseBody = null; .)
+(
     if Expression<out condition> 
     then Statement<out thenBody> 
     [
@@ -147,30 +161,53 @@ IfStatement<out IfStatementNode i> = (  (. Expression condition; Statement thenB
     endif                               (. i = new IfStatementNode(condition, thenBody, elseBody); .)
 ).
 
-WhileStatement<out WhileStatementNode w> = (                    (. Expression condition; Statement body; .)
+WhileStatement<out WhileStatementNode w> =                      (. ExpressionNode condition; StatementNode body; .)
+(
     while Expression<out condition> do Statement<out body> done (. w = new WhileStatementNode(condition, body); .)
 ).
 
-Expression<out ExpressionNode e> = (                            (. ExpressionNode left, right, child; IntegerNode i; .)
-      Expression<out left> '+'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.Add, right); .)
-    | Expression<out left> '-'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.Subtract, right); .)
-    | Expression<out left> '*'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.Multiply, right); .)
-    | Expression<out left> '/'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.Divide, right); .)
-    | Expression<out left> equal    Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.Equal, right); .)
-    | Expression<out left> notEqual Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.NotEqual, right); .)
-    | Expression<out left> '<'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.LessThan, right); .)
-    | Expression<out left> leq      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.LessThanOrEqual, right); .)
-    | Expression<out left> '>'      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.GreaterThan, right); .)
-    | Expression<out left> geq      Expression<out right>       (. e = new BinaryExpressionNode(left, Operator.GreaterThanOrEqual, right); .)
-    | '-' Expression<out child>                                 (. e = new UnaryExpressionNode(Operator.Subtract, child); .)
-    | '(' Expression<out child> ')'                             (. e = child; .)
-    | Integer<out i>                                            (. e = new ConstantExpressionNode(i); .)
-    | Identifier<out name>                                      (. e = new VariableReferenceNode(id); .)
-      [                                                         (. e = f = new FunctionCallNode(name); .)
+Expression<out ExpressionNode e> =      (. ExpressionNode left, right, current; .)
+(
+    Comparand<out left>                 (. e = current = left; .)
+    {
+          equal    Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.Equal, right); .)
+        | notEqual Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.NotEqual, right); .)
+        | '<'      Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.LessThan, right); .)
+        | leq      Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.LessThanOrEqual, right); .)
+        | '>'      Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.GreaterThan, right); .)
+        | geq      Comparand<out right> (. e = current = new BinaryExpressionNode(current, Operator.GreaterThanOrEqual, right); .)
+    }
+).
+
+Comparand<out ExpressionNode e> =   (. ExpressionNode left, right, current; .)
+(
+    Term<out left>                  (. e = current = left; .)
+    {
+          '+' Term<out right>       (. e = current = new BinaryExpressionNode(current, Operator.Add, right); .)
+        | '-' Term<out right>       (. e = current = new BinaryExpressionNode(current, Operator.Subtract, right); .)
+    }
+).
+
+Term<out ExpressionNode e> =            (. ExpressionNode left, right, current; .)
+(
+    Factor<out left>                    (. e = current = left; .)
+    {
+          '*'       Factor<out right>   (. e = current = new BinaryExpressionNode(current, Operator.Multiply, right); .)
+        | divide    Factor<out right>   (. e = current = new BinaryExpressionNode(current, Operator.Divide, right); .)
+    }
+).
+
+Factor<out ExpressionNode e> =          (. e = null; ExpressionNode child, arg; IntegerNode i; IdentifierNode name; FunctionCallNode f; .)
+(
+      '-' Expression<out child>         (. e = new UnaryExpressionNode(Operator.Subtract, child); .)
+    | '(' Expression<out child> ')'     (. e = child; .)
+    | Integer<out i>                    (. e = new ConstantExpressionNode(i); .)
+    | Identifier<out name>              (. e = new VariableReferenceNode(name); .)
+      [                                 (. e = f = new FunctionCallNode(name); .)
         '(' [
-            Expression<out arg>                                 (. f.Arguments.Add(arg); .)
+            Expression<out arg>         (. f.Arguments.Add(arg); .)
             {
-                ',' Expression<out arg>                         (. f.Arguments.Add(arg); .)
+                ',' Expression<out arg> (. f.Arguments.Add(arg); .)
             }
         ] ')'
       ]

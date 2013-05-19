@@ -27,7 +27,7 @@ namespace Compiler
     {
         public IdentifierNode Name { get; private set; }
         public List<IdentifierNode> Parameters { get; private set; }
-        public BlockNode Body { get; set; }
+        public BlockStatementNode Body { get; set; }
 
         public FunctionNode(IdentifierNode name)
         {
@@ -46,12 +46,12 @@ namespace Compiler
         public abstract IEnumerable<ISyntaxNode> GetChildren();
     }
 
-    public class BlockNode : StatementNode
+    public class BlockStatementNode : StatementNode
     {
         public List<DeclarationNode> Declarations { get; private set; }
         public List<StatementNode> Statements { get; private set; }
 
-        public BlockNode()
+        public BlockStatementNode()
         {
             Declarations = new List<DeclarationNode>();
             Statements = new List<StatementNode>();
@@ -185,9 +185,9 @@ namespace Compiler
         Equal,
         NotEqual,
         LessThan,
-        LessThanOrEqualTo,
+        LessThanOrEqual,
         GreaterThan,
-        GreaterThanOrEqualTo,
+        GreaterThanOrEqual,
         Add,
         Subtract,
         Multiply,
@@ -211,6 +211,11 @@ namespace Compiler
         {
             return new[] {Left, Right};
         }
+
+        public override string ToString()
+        {
+            return "BinaryExpression: " + Operator;
+        }
     }
 
     public class UnaryExpressionNode : ExpressionNode
@@ -228,6 +233,11 @@ namespace Compiler
         {
             return new[] {Child};
         }
+
+        public override string ToString()
+        {
+            return "UnaryExpression: " + Operator;
+        }
     }
 
     public class FunctionCallNode : ExpressionNode
@@ -244,6 +254,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[] {Name}.Concat(Arguments);
+        }
+
+        public override string ToString()
+        {
+            return "FunctionCall";
         }
     }
 
@@ -305,6 +320,11 @@ namespace Compiler
         {
             return new ISyntaxNode[0];
         }
+
+        public override string ToString()
+        {
+            return "Identifier: " + Name;
+        }
     }
 
     public class IntegerNode : ISyntaxNode
@@ -319,6 +339,11 @@ namespace Compiler
         public IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[0];
+        }
+
+        public override string ToString()
+        {
+            return "Integer: " + Value;
         }
     }
 
