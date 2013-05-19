@@ -123,13 +123,6 @@ namespace Compiler
         public StatementNode ThenBody { get; private set; }
         public StatementNode ElseBody { get; private set; }
 
-        public IfStatementNode(ExpressionNode condition, StatementNode thenBody)
-        {
-            Condition = condition;
-            ThenBody = thenBody;
-            ElseBody = null;
-        }
-
         public IfStatementNode(ExpressionNode condition, StatementNode thenBody, StatementNode elseBody)
         {
             Condition = condition;
