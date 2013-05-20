@@ -1,4 +1,8 @@
-﻿using System;
+﻿// This compiler is strongly inspired by the excellent exercises created by Jan Christian Meyer
+// for Anne C. Elster's course TDT4205 at the Norwegian University of Science and Technology.
+
+using System;
+using System.IO;
 
 namespace Compiler
 {
@@ -6,12 +10,19 @@ namespace Compiler
     {
         public static void Main(string[] args)
         {
-            var parser = ParserWrapper.Parse(@"E:\Presentations\2013-05 - Compiler\notsosimple.vsl", Console.Out);
+            string sourceFilePath = (args.Length >= 1 ? args[0] : @"E:\Presentations\2013-05 - Compiler\primes.vsl");
+            string outputFilePath = (args.Length >= 2 ? args[1] : @"E:\Presentations\2013-05 - Compiler\output.il");
+            var parser = ParserWrapper.Parse(sourceFilePath, Console.Out);
             var symbolTable = new SymbolTable();
             symbolTable.FindSymbols(parser.RootNode);
             Print(parser.RootNode, 0);
-            Console.WriteLine("Done");
-            Console.ReadKey();
+            using (var file = File.OpenWrite(outputFilePath))
+            using (var writer = new StreamWriter(file))
+            {
+                var generator = new MsilCodeGenerator(writer);
+                generator.Generate(parser.RootNode);
+            }
+            Console.WriteLine("Code generation complete");
         }
 
         private static void Print(ISyntaxNode node, int level)

@@ -29,7 +29,7 @@ namespace Compiler
         public List<IdentifierNode> Parameters { get; private set; }
         public BlockStatementNode Body { get; set; }
         public SymbolTableEntry SymbolTableEntry { get; set; }
-        public int LocalVariablesSize { get; set; }
+        public int LocalVariableCount { get; set; }
 
         public FunctionNode(IdentifierNode name)
         {
@@ -44,7 +44,7 @@ namespace Compiler
 
         public override string ToString()
         {
-            return "Function: " + Name + " " + SymbolTableEntry + " " + LocalVariablesSize;
+            return "Function: " + Name + " " + SymbolTableEntry + " " + LocalVariableCount;
         }
     }
 
@@ -74,6 +74,7 @@ namespace Compiler
     {
         public IdentifierNode Variable { get; private set; }
         public ExpressionNode Expression { get; private set; }
+        public SymbolTableEntry SymbolTableEntry { get; set; }
 
         public AssignmentStatementNode(IdentifierNode variable, ExpressionNode expression)
         {
@@ -81,10 +82,14 @@ namespace Compiler
             Expression = expression;
         }
 
-
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[] {Variable, Expression};
+        }
+
+        public override string ToString()
+        {
+            return "Assignment: " + SymbolTableEntry;
         }
     }
 
@@ -251,6 +256,7 @@ namespace Compiler
     {
         public IdentifierNode Name { get; private set; }
         public List<ExpressionNode> Arguments { get; private set; }
+        public SymbolTableEntry SymbolTableEntry { get; set; }
 
         public FunctionCallNode(IdentifierNode name)
         {
@@ -265,7 +271,7 @@ namespace Compiler
 
         public override string ToString()
         {
-            return "FunctionCall";
+            return "FunctionCall: " + SymbolTableEntry;
         }
     }
 
@@ -287,6 +293,7 @@ namespace Compiler
     public class VariableReferenceNode : ExpressionNode
     {
         public IdentifierNode Variable { get; private set; }
+        public SymbolTableEntry SymbolTableEntry { get; set; }
 
         public VariableReferenceNode(IdentifierNode variable)
         {
@@ -296,6 +303,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new[] {Variable};
+        }
+
+        public override string ToString()
+        {
+            return "VariableReference: " + SymbolTableEntry;
         }
     }
 
@@ -317,8 +329,7 @@ namespace Compiler
     public class IdentifierNode : ISyntaxNode
     {
         public string Name { get; private set; }
-        public SymbolTableEntry SymbolTableEntry { get; set; }
-
+        
         public IdentifierNode(string name)
         {
             Name = name;
@@ -331,7 +342,7 @@ namespace Compiler
 
         public override string ToString()
         {
-            return "Identifier: " + Name + " " + SymbolTableEntry;
+            return "Identifier: " + Name;
         }
     }
 

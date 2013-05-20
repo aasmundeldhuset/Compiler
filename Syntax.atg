@@ -143,7 +143,7 @@ PrintItem<out IPrintItemNode p> =   (. p = null; ExpressionNode e; StringNode s;
 
 String<out StringNode s> =
 (
-    string                      (. s = new StringNode(t.val); .)
+    string                      (. s = new StringNode(t.val.Substring(1, t.val.Length - 2)); .)
 ).
 
 Integer<out IntegerNode i> =

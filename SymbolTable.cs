@@ -15,18 +15,18 @@ namespace Compiler
     {
         public string Label { get; private set; }
         public SymbolTableEntryType Type { get; private set; }
-        public int StackOffset { get; private set; }
+        public int Index { get; private set; }
 
-        public SymbolTableEntry(string label, SymbolTableEntryType type, int stackOffset)
+        public SymbolTableEntry(string label, SymbolTableEntryType type, int index)
         {
             Label = label;
             Type = type;
-            StackOffset = stackOffset;
+            Index = index;
         }
 
         public override string ToString()
         {
-            return Label + " " + Type + " " + StackOffset;
+            return Label + " " + Type + " " + Index;
         }
     }
 
@@ -48,69 +48,85 @@ namespace Compiler
                 _scopeStack.PushScope(function.Name.Name);
                 int unused = 0;
                 EnterIdentifiers(function.Parameters, SymbolTableEntryType.Parameter, ref unused);
-                int stackOffset = -4;
-                FindSymbolsRecursively(function.Body, ref stackOffset);
+                int localVariableIndex = 0;
+                FindSymbolsRecursively(function.Body, ref localVariableIndex);
                 _scopeStack.PopScope();
-                function.LocalVariablesSize = -4 - stackOffset;
+                function.LocalVariableCount = localVariableIndex;
             }
         }
         
-        private void AddSymbol(string key, SymbolTableEntry entry)
-        {
-            _symbols.Add(key, entry);
-        }
-
-        private void FindSymbolsRecursively(ISyntaxNode node, ref int stackOffset)
+        private void FindSymbolsRecursively(ISyntaxNode node, ref int localVariableIndex)
         {
             if (node is BlockStatementNode)
             {
                 var block = (BlockStatementNode) node;
                 _scopeStack.PushAnonymousScope();
                 var declaredIdentifiers = block.Declarations.SelectMany(d => d.Variables).ToList();
-                EnterIdentifiers(declaredIdentifiers, SymbolTableEntryType.Variable, ref stackOffset);
+                EnterIdentifiers(declaredIdentifiers, SymbolTableEntryType.Variable, ref localVariableIndex);
                 foreach (var statement in block.Statements)
                 {
-                    FindSymbolsRecursively(statement, ref stackOffset);
+                    FindSymbolsRecursively(statement, ref localVariableIndex);
                 }
                 _scopeStack.PopScope();
             }
-            else if (node is IdentifierNode)
+            else if (node is VariableReferenceNode)
             {
-                var identifier = (IdentifierNode) node;
-                var symbolTableEntry = FindDeclaration(identifier.Name);
+                var reference = (VariableReferenceNode) node;
+                var symbolTableEntry = FindDeclaration(reference.Variable.Name);
                 if (symbolTableEntry == null)
-                    throw new Exception(string.Format("Variable {0} is not declared", identifier.Name));
-                identifier.SymbolTableEntry = symbolTableEntry;
+                    throw new Exception(string.Format("Variable {0} is not declared", reference.Variable.Name));
+                reference.SymbolTableEntry = symbolTableEntry;
+            }
+            else if (node is AssignmentStatementNode)
+            {
+                var assign = (AssignmentStatementNode) node;
+                var symbolTableEntry = FindDeclaration(assign.Variable.Name);
+                if (symbolTableEntry == null)
+                    throw new Exception(string.Format("Variable {0} is not declared", assign.Variable.Name));
+                assign.SymbolTableEntry = symbolTableEntry;
+                FindSymbolsRecursively(assign.Expression, ref localVariableIndex);
+            }
+            else if (node is FunctionCallNode)
+            {
+                var call = (FunctionCallNode) node;
+                var symbolTableEntry = FindDeclaration(call.Name.Name);
+                if (symbolTableEntry == null)
+                    throw new Exception(string.Format("Function {0} is not declared", call.Name.Name));
+                call.SymbolTableEntry = symbolTableEntry;
+                foreach (var argument in call.Arguments)
+                {
+                    FindSymbolsRecursively(argument, ref localVariableIndex);
+                }
             }
             else
             {
                 foreach (var child in node.GetChildren())
                 {
-                    FindSymbolsRecursively(child, ref stackOffset);
+                    FindSymbolsRecursively(child, ref localVariableIndex);
                 }
             }
         }
 
-        private void EnterIdentifiers(IList<IdentifierNode> identifiers, SymbolTableEntryType type, ref int stackOffset)
+        private void EnterIdentifiers(IEnumerable<IdentifierNode> identifiers, SymbolTableEntryType type, ref int localVariableIndex)
         {
-            int offset;
+            int index;
             if (type == SymbolTableEntryType.Parameter)
-                offset = 8 + (identifiers.Count - 1) * 4;
+                index = 0;
             else if (type == SymbolTableEntryType.Variable)
-                offset = stackOffset;
+                index = localVariableIndex;
             else
                 throw new ArgumentException("type must be Parameter or Variable", "type");
 
             foreach (var identifier in identifiers)
             {
                 string scopeString = _scopeStack.CreateScopeString(identifier.Name);
-                var entry = new SymbolTableEntry(identifier.Name, type, offset);
+                var entry = new SymbolTableEntry(identifier.Name, type, index);
                 AddSymbol(scopeString, entry);
-                offset -= 4;
+                ++index;
             }
 
             if (type == SymbolTableEntryType.Variable)
-                stackOffset = offset;
+                localVariableIndex = index;
         }
 
         private SymbolTableEntry FindDeclaration(string name)
@@ -121,6 +137,11 @@ namespace Compiler
                     return _symbols[scopeString];
             }
             return null;
+        }
+
+        private void AddSymbol(string key, SymbolTableEntry entry)
+        {
+            _symbols.Add(key, entry);
         }
     }
 }
