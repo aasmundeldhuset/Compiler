@@ -29,12 +29,8 @@ TOKENS
     continue        = "continue" .
     break           = "break" .
     if              = "if" .
-    then            = "then" .
     else            = "else" .
-    endif           = "endif" .
     while           = "while" .
-    do              = "do" .
-    done            = "done" .
     var             = "var" .
     assignment      = "=" .
     equal           = "==" .
@@ -154,16 +150,13 @@ Integer<out IntegerNode i> =
 IfStatement<out IfStatementNode i> =    (. ExpressionNode condition; StatementNode thenBody, elseBody = null; .)
 (
     if Expression<out condition> 
-    then Statement<out thenBody> 
-    [
-        else Statement<out elseBody>
-    ]
-    endif                               (. i = new IfStatementNode(condition, thenBody, elseBody); .)
+    Statement<out thenBody> 
+    [ else Statement<out elseBody> ]    (. i = new IfStatementNode(condition, thenBody, elseBody); .)
 ).
 
-WhileStatement<out WhileStatementNode w> =                      (. ExpressionNode condition; StatementNode body; .)
+WhileStatement<out WhileStatementNode w> =              (. ExpressionNode condition; StatementNode body; .)
 (
-    while Expression<out condition> do Statement<out body> done (. w = new WhileStatementNode(condition, body); .)
+    while Expression<out condition> Statement<out body> (. w = new WhileStatementNode(condition, body); .)
 ).
 
 Expression<out ExpressionNode e> =      (. ExpressionNode left, right, current; .)
