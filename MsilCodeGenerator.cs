@@ -78,6 +78,7 @@ namespace Compiler
             {
                 var ret = (ReturnStatementNode) node;
                 GenerateRecursively(ret.Expression);
+                EmitComment("Return");
                 Emit("ret");
             }
             else if (node is IfStatementNode)
@@ -146,9 +147,13 @@ namespace Compiler
             {
                 var expr = (BinaryExpressionNode) node;
                 if (new[] {Operator.NotEqual, Operator.LessThanOrEqual, Operator.GreaterThanOrEqual}.Contains(expr.Operator))
+                {
+                    EmitComment("Prepare for binary operator " + expr.Operator);
                     Emit("ldc.i4", 1);
+                }
                 GenerateRecursively(expr.Left);
                 GenerateRecursively(expr.Right);
+                EmitComment("Binary operator " + expr.Operator);
                 switch (expr.Operator)
                 {
                     case Operator.Equal:
@@ -192,6 +197,7 @@ namespace Compiler
             {
                 var expr = (UnaryExpressionNode) node;
                 GenerateRecursively(expr.Child);
+                EmitComment("Unary operator " + expr.Operator);
                 if (expr.Operator == Operator.Subtract)
                     Emit("neg");
                 else
@@ -211,19 +217,23 @@ namespace Compiler
                 }
                 string argumentTypes = string.Join(", ", Enumerable.Repeat("int32", call.Arguments.Count));
                 string signature = string.Format("int32 Vsl.VslMain::{0}({1})", call.Name.Name, argumentTypes);
+                EmitComment("Call function " + call.Name.Name);
                 Emit("call", signature);
             }
             else if (node is BlockStatementNode)
             {
                 var block = (BlockStatementNode) node;
+                EmitComment("Begin block");
                 foreach (var statement in block.Statements)
                 {
                     GenerateRecursively(statement);
                 }
+                EmitComment("End block");
             }
             else if (node is StringNode)
             {
                 var str = (StringNode) node;
+                EmitComment('"' + str.Value + '"');
                 Emit("ldstr", '"' + str.Value + '"');
             }
             else if (node is PrintStatementNode)
@@ -232,11 +242,13 @@ namespace Compiler
                 foreach (var item in print.Items)
                 {
                     GenerateRecursively(item);
+                    EmitComment("Print one item");
                     if (item is StringNode)
                         Emit("call", "void [mscorlib]System.Console::Write(string)");
                     else
                         Emit("call", "void [mscorlib]System.Console::Write(int32)");
                 }
+                EmitComment("Done printing");
                 Emit("call", "void [mscorlib]System.Console::WriteLine()");
             }
             else
