@@ -202,7 +202,7 @@ Term<out ExpressionNode e> =            (. ExpressionNode left, right, current; 
 
 Factor<out ExpressionNode e> =          (. e = null; ExpressionNode child, arg; IntegerNode i; IdentifierNode name; FunctionCallNode f; .)
 (
-      '-' Expression<out child>         (. e = new UnaryExpressionNode(Operator.Subtract, child); .)
+      '-' Factor<out child>             (. e = new UnaryExpressionNode(Operator.Subtract, child); .)
     | '(' Expression<out child> ')'     (. e = child; .)
     | Integer<out i>                    (. e = new ConstantExpressionNode(i); .)
     | Identifier<out name>              (. e = new VariableReferenceNode(name); .)
