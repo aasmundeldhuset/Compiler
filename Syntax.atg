@@ -32,6 +32,7 @@ TOKENS
     else            = "else" .
     while           = "while" .
     var             = "var" .
+    input           = "input" .
     assignment      = "=" .
     equal           = "==" .
     notEqual        = "!=" .
@@ -68,7 +69,7 @@ Function<out FunctionNode f> =      (. IdentifierNode i; BlockStatementNode b; .
             ',' Identifier<out i>   (. f.Parameters.Add(i); .)
         }
     ] ')'
-    Block<out b>                    (. f.Body = b; .)
+    BlockStatement<out b>           (. f.Body = b; .)
 ).
 
 Identifier<out IdentifierNode i> =
@@ -76,14 +77,14 @@ Identifier<out IdentifierNode i> =
     identifier  (. i = new IdentifierNode(t.val); .)
 ).
 
-Block<out BlockStatementNode b> =   (. DeclarationNode d; StatementNode s; b = new BlockStatementNode(); .)
+BlockStatement<out BlockStatementNode b> =  (. DeclarationNode d; StatementNode s; b = new BlockStatementNode(); .)
 (
     '{'
         {
-            Declaration<out d>      (. b.Declarations.Add(d); .)
+            Declaration<out d>              (. b.Declarations.Add(d); .)
         }
         {
-            Statement<out s>        (. b.Statements.Add(s); .)
+            Statement<out s>                (. b.Statements.Add(s); .)
         }
     '}'
 ).
@@ -96,7 +97,7 @@ Declaration<out DeclarationNode d> =    (. IdentifierNode i; d = new Declaration
     }
 ).
 
-Statement<out StatementNode s> =    (. s = null; AssignmentStatementNode a; ReturnStatementNode r; PrintStatementNode p; NullStatementNode n; IfStatementNode i; WhileStatementNode w; BlockStatementNode b; .)
+Statement<out StatementNode s> =    (. s = null; AssignmentStatementNode a; ReturnStatementNode r; PrintStatementNode p; NullStatementNode n; IfStatementNode i; WhileStatementNode w; BlockStatementNode b; InputStatementNode input; .)
 (
     AssignmentStatement<out a>      (. s = a; .)
     | ReturnStatement<out r>        (. s = r; .)
@@ -104,7 +105,8 @@ Statement<out StatementNode s> =    (. s = null; AssignmentStatementNode a; Retu
     | NullStatement<out n>          (. s = n; .)
     | IfStatement<out i>            (. s = i; .)
     | WhileStatement<out w>         (. s = w; .)
-    | Block<out b>                  (. s = b; .)
+    | BlockStatement<out b>         (. s = b; .)
+    | InputStatement<out input>     (. s = input; .)
 ).
 
 AssignmentStatement<out AssignmentStatementNode a> =    (. IdentifierNode i; ExpressionNode e; .)
@@ -122,6 +124,14 @@ PrintStatement<out PrintStatementNode p> =      (. IPrintItemNode pi; p = new Pr
     print PrintItem<out pi>                     (. p.Items.Add(pi); .)
     {
         "," PrintItem<out pi>                   (. p.Items.Add(pi); .)
+    }
+).
+
+InputStatement<out InputStatementNode i> =  (. IdentifierNode id; i = new InputStatementNode(); .)
+(
+    input Identifier<out id>                (. i.TargetVariables.Add(new VariableReferenceNode(id)); .)
+    {
+        "," Identifier<out id>              (. i.TargetVariables.Add(new VariableReferenceNode(id)); .)
     }
 ).
 

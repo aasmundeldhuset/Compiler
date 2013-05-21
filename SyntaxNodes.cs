@@ -187,6 +187,21 @@ namespace Compiler
     {
     }
 
+    public class InputStatementNode : StatementNode
+    {
+        public List<VariableReferenceNode> TargetVariables { get; private set; }
+
+        public InputStatementNode()
+        {
+            TargetVariables = new List<VariableReferenceNode>();
+        }
+
+        public override IEnumerable<ISyntaxNode> GetChildren()
+        {
+            return TargetVariables;
+        }
+    }
+
     public abstract class ExpressionNode : ISyntaxNode, IPrintItemNode
     {
         public abstract IEnumerable<ISyntaxNode> GetChildren();

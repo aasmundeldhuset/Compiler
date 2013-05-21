@@ -251,6 +251,20 @@ namespace Compiler
                 EmitComment("Done printing");
                 Emit("call", "void [mscorlib]System.Console::WriteLine()");
             }
+            else if (node is InputStatementNode)
+            {
+                var input = (InputStatementNode) node;
+                foreach (var target in input.TargetVariables)
+                {
+                    EmitComment("Input to " + target.Variable.Name);
+                    Emit("call", "string [mscorlib]System.Console::ReadLine()");
+                    Emit("call", "int32 [mscorlib]System.Int32::Parse(string)");
+                    if (target.SymbolTableEntry.Type == SymbolTableEntryType.Variable)
+                        Emit("stloc", target.SymbolTableEntry.Index);
+                    else // Parameter
+                        Emit("starg", target.SymbolTableEntry.Index);
+                }
+            }
             else
             {
                 throw new Exception(string.Format("Unknown node type {0} (shouldn't happen)", node.GetType().FullName));
