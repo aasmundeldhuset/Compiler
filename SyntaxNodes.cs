@@ -6,6 +6,30 @@ namespace Compiler
     public interface ISyntaxNode
     {
         IEnumerable<ISyntaxNode> GetChildren();
+        void Accept(ISyntaxNodeVisitor visitor);
+    }
+
+    public interface ISyntaxNodeVisitor
+    {
+        void Visit(ProgramNode program);
+        void Visit(FunctionNode function);
+        void Visit(BlockStatementNode block);
+        void Visit(AssignmentStatementNode assignment);
+        void Visit(ReturnStatementNode statement);
+        void Visit(NullStatementNode statement);
+        void Visit(IfStatementNode statement);
+        void Visit(WhileStatementNode statement);
+        void Visit(PrintStatementNode print);
+        void Visit(InputStatementNode input);
+        void Visit(BinaryExpressionNode expression);
+        void Visit(UnaryExpressionNode expression);
+        void Visit(FunctionCallNode call);
+        void Visit(ConstantExpressionNode constant);
+        void Visit(VariableReferenceNode reference);
+        void Visit(DeclarationNode declaration);
+        void Visit(IdentifierNode identifier);
+        void Visit(IntegerNode integer);
+        void Visit(StringNode str);
     }
 
     public class ProgramNode : ISyntaxNode
@@ -20,6 +44,11 @@ namespace Compiler
         public IEnumerable<ISyntaxNode> GetChildren()
         {
             return Functions;
+        }
+
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -41,6 +70,11 @@ namespace Compiler
         {
             return new ISyntaxNode[] {Name}.Concat(Parameters).Concat(new[] {Body});
         }
+        
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
 
         public override string ToString()
         {
@@ -51,6 +85,7 @@ namespace Compiler
     public abstract class StatementNode : ISyntaxNode
     {
         public abstract IEnumerable<ISyntaxNode> GetChildren();
+        public abstract void Accept(ISyntaxNodeVisitor visitor);
     }
 
     public class BlockStatementNode : StatementNode
@@ -67,6 +102,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return Declarations.Cast<ISyntaxNode>().Concat(Statements);
+        }
+        
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -85,6 +125,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[] {Variable, Expression};
+        }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override string ToString()
@@ -106,6 +151,11 @@ namespace Compiler
         {
             return new[] {Expression};
         }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public enum NullStatementType
@@ -126,6 +176,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[0];
+        }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -149,6 +204,11 @@ namespace Compiler
                 children.Add(ElseBody);
             return children;
         }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class WhileStatementNode : StatementNode
@@ -166,6 +226,11 @@ namespace Compiler
         {
             return new ISyntaxNode[] {Condition, Body};
         }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class PrintStatementNode : StatementNode
@@ -180,6 +245,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return Items;
+        }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
     }
 
@@ -200,11 +270,17 @@ namespace Compiler
         {
             return TargetVariables;
         }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public abstract class ExpressionNode : ISyntaxNode, IPrintItemNode
     {
         public abstract IEnumerable<ISyntaxNode> GetChildren();
+        public abstract void Accept(ISyntaxNodeVisitor visitor);
     }
 
     public enum Operator
@@ -239,6 +315,11 @@ namespace Compiler
             return new[] {Left, Right};
         }
 
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
         public override string ToString()
         {
             return "BinaryExpression: " + Operator;
@@ -259,6 +340,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new[] {Child};
+        }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override string ToString()
@@ -284,6 +370,11 @@ namespace Compiler
             return new ISyntaxNode[] {Name}.Concat(Arguments);
         }
 
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
         public override string ToString()
         {
             return "FunctionCall: " + SymbolTableEntry;
@@ -303,6 +394,11 @@ namespace Compiler
         {
             return new[] {Value};
         }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class VariableReferenceNode : ExpressionNode
@@ -318,6 +414,11 @@ namespace Compiler
         public override IEnumerable<ISyntaxNode> GetChildren()
         {
             return new[] {Variable};
+        }
+
+        public override void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override string ToString()
@@ -339,6 +440,11 @@ namespace Compiler
         {
             return Variables;
         }
+
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
     }
 
     public class IdentifierNode : ISyntaxNode
@@ -353,6 +459,11 @@ namespace Compiler
         public IEnumerable<ISyntaxNode> GetChildren()
         {
             return new ISyntaxNode[0];
+        }
+
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public override string ToString()
@@ -375,6 +486,11 @@ namespace Compiler
             return new ISyntaxNode[0];
         }
 
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
+        }
+
         public override string ToString()
         {
             return "Integer: " + Value;
@@ -388,6 +504,11 @@ namespace Compiler
         public StringNode(string value)
         {
             Value = value;
+        }
+
+        public void Accept(ISyntaxNodeVisitor visitor)
+        {
+            visitor.Visit(this);
         }
 
         public IEnumerable<ISyntaxNode> GetChildren()
