@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ICodeGenerator.cs" />
+    <Compile Include="JavaScriptCodeGenerator.cs" />
     <Compile Include="MsilCodeGenerator.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="ParserWrapper.cs" />
