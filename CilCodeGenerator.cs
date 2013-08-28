@@ -4,13 +4,13 @@ using System.Linq;
 
 namespace Compiler
 {
-    public class MsilCodeGenerator : ICodeGenerator, ISyntaxNodeVisitor
+    public class CilCodeGenerator : ICodeGenerator, ISyntaxNodeVisitor
     {
         private readonly TextWriter _output;
         private int _labelCount;
         private int? _innermostWhileLabelIndex;
 
-        public MsilCodeGenerator(TextWriter output)
+        public CilCodeGenerator(TextWriter output)
         {
             _output = output;
         }

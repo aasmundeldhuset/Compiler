@@ -19,7 +19,7 @@ namespace Compiler
             using (var file = File.OpenWrite(outputFilePath))
             using (var writer = new StreamWriter(file))
             {
-                var generator = new MsilCodeGenerator(writer);
+                var generator = new CilCodeGenerator(writer);
                 generator.Generate(parser.RootNode);
             }
             Console.WriteLine("Code generation complete");
