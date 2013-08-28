@@ -11,7 +11,7 @@ namespace Compiler
         public static void Main(string[] args)
         {
             string sourceFilePath = (args.Length >= 1 ? args[0] : @"E:\Presentations\2013-05 - Compiler\primes.vsl");
-            string outputFilePath = (args.Length >= 2 ? args[1] : @"E:\Presentations\2013-05 - Compiler\output.il");
+            string outputFilePath = (args.Length >= 2 ? args[1] : @"E:\Presentations\2013-05 - Compiler\VSL.j");
             var parser = ParserWrapper.Parse(sourceFilePath, Console.Out);
             var symbolTable = new SymbolTable();
             symbolTable.FindSymbols(parser.RootNode);
@@ -19,7 +19,7 @@ namespace Compiler
             using (var file = File.OpenWrite(outputFilePath))
             using (var writer = new StreamWriter(file))
             {
-                var generator = new CilCodeGenerator(writer);
+                var generator = new JasminCodeGenerator(writer);
                 generator.Generate(parser.RootNode);
             }
             Console.WriteLine("Code generation complete");

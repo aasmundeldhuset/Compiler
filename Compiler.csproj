@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JasminCodeGenerator.cs" />
     <Compile Include="ICodeGenerator.cs" />
     <Compile Include="JavaScriptCodeGenerator.cs" />
     <Compile Include="CilCodeGenerator.cs" />
