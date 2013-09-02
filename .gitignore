@@ -5,3 +5,9 @@ Parser.cs
 Scanner.cs
 _ReSharper.*
 *.old
+*.exe
+*.il
+*.pdb
+*.j
+*.js
+*.class

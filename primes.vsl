@@ -1,0 +1,27 @@
+func IsPrime(number)
+{
+    var divisor
+    divisor = 2
+    while divisor < number
+    {
+        if number / divisor * divisor == number
+            return 0
+        divisor = divisor + 1
+    }
+    return 1
+}
+
+func Main()
+{
+    var n, max
+    print "Please enter the greatest number to check:"
+    input max
+    n = 2
+    while n <= max
+    {
+        if IsPrime(n)
+            print n, " is prime"
+        n = n + 1
+    }
+    return 0
+}

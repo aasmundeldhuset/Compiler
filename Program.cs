@@ -10,19 +10,31 @@ namespace Compiler
     {
         public static void Main(string[] args)
         {
-            string sourceFilePath = (args.Length >= 1 ? args[0] : @"E:\Presentations\2013-05 - Compiler\primes.vsl");
-            string outputFilePath = (args.Length >= 2 ? args[1] : @"E:\Presentations\2013-05 - Compiler\VSL.j");
+            string targetLanguage = args[0];
+            string sourceFilePath = args[1];
+            string outputFilePath = args[2];
             var parser = ParserWrapper.Parse(sourceFilePath, Console.Out);
             var symbolTable = new SymbolTable();
             symbolTable.FindSymbols(parser.RootNode);
             Print(parser.RootNode, 0);
+            File.Delete(outputFilePath);
             using (var file = File.OpenWrite(outputFilePath))
             using (var writer = new StreamWriter(file))
             {
-                var generator = new JasminCodeGenerator(writer);
+                ICodeGenerator generator;
+                if (targetLanguage == "cil")
+                    generator = new CilCodeGenerator(writer);
+                else if (targetLanguage == "jasmin")
+                    generator = new JasminCodeGenerator(writer);
+                else if (targetLanguage == "javascript")
+                    generator = new JavaScriptCodeGenerator(writer);
+                else
+                {
+                    Console.WriteLine("Unsupported target language: '{0}' (must be 'cil', 'jasmin', or 'javascript')", targetLanguage);
+                    return;
+                }
                 generator.Generate(parser.RootNode);
             }
-            Console.WriteLine("Code generation complete");
         }
 
         private static void Print(ISyntaxNode node, int level)
