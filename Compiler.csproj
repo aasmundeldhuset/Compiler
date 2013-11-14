@@ -60,7 +60,9 @@
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Coco.cmd" />
-    <None Include="Compile.cmd" />
+    <None Include="CompileToCil.cmd" />
+    <None Include="CompileToJasmin.cmd" />
+    <None Include="CompileToJavaScript.cmd" />
     <None Include="Syntax.atg" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
