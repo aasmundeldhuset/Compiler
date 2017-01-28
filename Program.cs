@@ -23,14 +23,24 @@ namespace Compiler
             {
                 ICodeGenerator generator;
                 if (targetLanguage == "cil")
+                {
                     generator = new CilCodeGenerator(writer);
+                }
                 else if (targetLanguage == "jasmin")
+                {
                     generator = new JasminCodeGenerator(writer);
+                }
                 else if (targetLanguage == "javascript")
+                {
                     generator = new JavaScriptCodeGenerator(writer);
+                }
+                else if (targetLanguage == "x86")
+                {
+                    generator = new X86CodeGenerator(writer);
+                }
                 else
                 {
-                    Console.WriteLine("Unsupported target language: '{0}' (must be 'cil', 'jasmin', or 'javascript')", targetLanguage);
+                    Console.WriteLine("Unsupported target language: '{0}' (must be 'cil', 'jasmin', 'javascript', or 'x86')", targetLanguage);
                     return;
                 }
                 generator.Generate(parser.RootNode);

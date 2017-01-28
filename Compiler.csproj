@@ -56,12 +56,14 @@
     <Compile Include="SyntaxNodes.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="X86CodeGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="Coco.cmd" />
     <None Include="CompileToCil.cmd" />
     <None Include="CompileToJasmin.cmd" />
+    <None Include="CompileToX86.cmd" />
     <None Include="CompileToJavaScript.cmd" />
     <None Include="Syntax.atg" />
   </ItemGroup>
