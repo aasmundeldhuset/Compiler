@@ -19,7 +19,7 @@ func Main()
     n = 2
     while n <= max
     {
-        if IsPrime(n)
+        if IsPrime(n) == 1
             print n, " is prime"
         n = n + 1
     }

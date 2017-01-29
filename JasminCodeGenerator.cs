@@ -104,7 +104,7 @@ namespace Compiler
             if (statement.Type == NullStatementType.Continue)
             {
                 EmitComment("Continue");
-                Emit("goto", "while_cond_" + _innermostWhileLabelIndex);
+                Emit("goto", "while_condition_" + _innermostWhileLabelIndex);
             }
             else if (statement.Type == NullStatementType.Break)
             {

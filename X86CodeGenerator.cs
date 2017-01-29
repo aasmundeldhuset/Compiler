@@ -9,11 +9,10 @@ namespace Compiler
     {
         private readonly TextWriter _output;
         private int _labelCount;
-        private int? _innermostWhileLabelIndex;
-        private readonly Stack<int> _parameterCounts = new Stack<int>();
+        private readonly Stack<int> _whileLabelIndices = new Stack<int>();
         private FunctionNode _currentFunction;
         private static readonly StringNode NEWLINE_NODE = new StringNode("\n");
-        private Dictionary<string, int> _strings = new Dictionary<string, int> { { NEWLINE_NODE.Value, 0 } };
+        private Dictionary<string, int> _strings = new Dictionary<string, int>();
         private static readonly List<Operator> COMPARISON_OPERATORS = new List<Operator> { Operator.Equal, Operator.NotEqual, Operator.LessThan, Operator.LessThanOrEqual, Operator.GreaterThanOrEqual, Operator.GreaterThan };
 
         public X86CodeGenerator(TextWriter output)
@@ -23,13 +22,16 @@ namespace Compiler
 
         public void Generate(ProgramNode program)
         {
+            _labelCount = 0;
+            _whileLabelIndices.Clear();
+            _currentFunction = null;
+            _strings.Clear();
+            _strings[NEWLINE_NODE.Value] = 0;
             Visit(program);
         }
 
         public void Visit(ProgramNode program)
         {
-            _labelCount = 0;
-            _innermostWhileLabelIndex = null;
             EmitHead();
             foreach (var function in program.Functions)
             {
@@ -44,6 +46,7 @@ namespace Compiler
             EmitBlankLine();
             EmitLabelComment("Function: " + function.Name.Name);
             EmitLabel("fun_" + function.Name.Name);
+            //TODO: Replace with enter
             Emit("push", "ebp");
             Emit("mov", "ebp", "esp");
             Emit("sub", "esp", GetStackSpaceForArguments().ToString());
@@ -66,14 +69,34 @@ namespace Compiler
             statement.Expression.Accept(this);
             EmitComment("Return");
             Emit("pop", "eax");
-            Emit("add", "esp", GetStackSpaceForArguments().ToString());
+            Emit("add", "esp", GetStackSpaceForArguments().ToString()); //TODO: Not really necessary
             Emit("leave");
             Emit("ret");
         }
 
         public void Visit(IfStatementNode statement)
         {
-            
+            int labelIndex = _labelCount++;
+            string falseLabel = "if_false_" + labelIndex;
+            string endLabel = "if_end_" + labelIndex;
+            EmitComment("If: condition");
+            var condition = RequireComparisonExpression(statement.Condition, "If");
+            condition.Accept(this);
+            EmitComment("If: jump");
+            Emit(GetJumpIfFalseInstruction(condition.Operator), falseLabel);
+            EmitComment("If: begin true part");
+            statement.ThenBody.Accept(this);
+            if (statement.ElseBody != null)
+                Emit("jmp", endLabel);
+            EmitComment("If: end true part");
+            EmitLabel(falseLabel);
+            if (statement.ElseBody != null)
+            {
+                EmitComment("If: begin false part");
+                statement.ElseBody.Accept(this);
+                EmitComment("If: end false part");
+                EmitLabel(endLabel);
+            }
         }
 
         public void Visit(PrintStatementNode print)
@@ -134,9 +157,9 @@ namespace Compiler
                 case Operator.LessThanOrEqual:
                 case Operator.GreaterThan:
                 case Operator.GreaterThanOrEqual:
+                    Emit("pop", "ebx");
                     Emit("pop", "eax");
-                    Emit("cmp", "[esp]", "eax");
-                    Emit("add", "esp", "4"); // Drop TOS
+                    Emit("cmp", "eax", "ebx");
                     break;
                 case Operator.Add:
                     // Pop into eax, add eax to TOS
@@ -152,14 +175,14 @@ namespace Compiler
                     // move 0 to edx, pop into eax, multiply by TOS, move eax to TOS
                     Emit("mov", "edx", "0");
                     Emit("pop", "eax");
-                    Emit("imul", "[esp]");
+                    Emit("imul", "dword [esp]");
                     Emit("mov", "[esp]", "eax");
                     break;
                 case Operator.Divide:
                     // Move 0 to edx, pop into eax, divide by TOS, move eax to TOS
                     Emit("mov", "edx", 0);
                     Emit("pop", "eax");
-                    Emit("idiv", "[esp]");
+                    Emit("idiv", "dword [esp]");
                     Emit("mov", "[esp]", "eax");
                     break;
                 default:
@@ -169,7 +192,14 @@ namespace Compiler
 
         public void Visit(FunctionCallNode call)
         {
-
+            foreach (ExpressionNode argument in Enumerable.Reverse(call.Arguments))
+            {
+                argument.Accept(this);
+            }
+            EmitComment("Function call: " + call.Name.Name);
+            Emit("call", "fun_" + call.Name.Name);
+            Emit("add", "esp", call.Arguments.Count * 4);
+            Emit("push", "eax");
         }
 
         public void Visit(VariableReferenceNode reference)
@@ -230,38 +260,36 @@ namespace Compiler
         public void Visit(WhileStatementNode statement)
         {
             int labelIndex = _labelCount++;
-            int? previousInnermostWhileLabelIndex = _innermostWhileLabelIndex;
-            _innermostWhileLabelIndex = labelIndex;
+            _whileLabelIndices.Push(labelIndex);
             string conditionLabel = "while_condition_" + labelIndex;
             string endLabel = "while_end_" + labelIndex;
             EmitLabelComment("While: condition");
             EmitLabel(conditionLabel);
-            var condition = statement.Condition as BinaryExpressionNode;
-            if (condition == null || !COMPARISON_OPERATORS.Contains(condition.Operator))
-                throw new Exception("While statement must have comparison expression");
+            var condition = RequireComparisonExpression(statement.Condition, "While");
             condition.Accept(this);
             Emit(GetJumpIfFalseInstruction(condition.Operator), endLabel);
             EmitComment("While: body");
             statement.Body.Accept(this);
             Emit("jmp", conditionLabel);
             EmitLabel(endLabel);
-            _innermostWhileLabelIndex = previousInnermostWhileLabelIndex;
+            _whileLabelIndices.Pop();
         }
 
         public void Visit(NullStatementNode statement)
         {
-            if (_innermostWhileLabelIndex == null)
+            if (_whileLabelIndices.Count == 0)
                 throw new Exception("There is no loop to continue or break out of");
 
+            int innermostWhileLabelIndex = _whileLabelIndices.Peek();
             if (statement.Type == NullStatementType.Continue)
             {
                 EmitComment("Continue");
-                Emit("jmp", "while_cond_" + _innermostWhileLabelIndex);
+                Emit("jmp", "while_condition_" + innermostWhileLabelIndex);
             }
             else if (statement.Type == NullStatementType.Break)
             {
                 EmitComment("Break");
-                Emit("jmp", "while_end_" + _innermostWhileLabelIndex);
+                Emit("jmp", "while_end_" + innermostWhileLabelIndex);
             }
             else
             {
@@ -292,11 +320,11 @@ namespace Compiler
              * param_1
              * param_0
              * return_address
-             * caller_frame   <- ebp?
+             *   caller_frame <- ebp
              * local_0
              * local_1
              * ...
-             * local_n-1
+             * local_n-1 <- esp
              */
             if (entry.Type == SymbolTableEntryType.Variable)
                 return -4 * (entry.Index + 1);
@@ -331,9 +359,20 @@ namespace Compiler
             return _currentFunction.LocalVariableCount * 4;
         }
 
+        private BinaryExpressionNode RequireComparisonExpression(ExpressionNode expression, string statementType)
+        {
+            var condition = expression as BinaryExpressionNode;
+            if (condition == null || !COMPARISON_OPERATORS.Contains(condition.Operator))
+                throw new Exception(statementType + " statement must have comparison expression");
+            return condition;
+        }
+
         private void PrintInteger(IPrintItemNode item)
         {
+            item.Accept(this);
             EmitComment("Print integer");
+            Emit("call", "print_integer");
+            Emit("add", "esp", 4);
         }
 
         private void PrintString(StringNode str, string comment = "Print string")
@@ -344,6 +383,7 @@ namespace Compiler
             str.Accept(this);
             Emit("push", "dword [stdOutHandle]");
             Emit("call", "_WriteConsoleA@20");
+            EmitComment("Note: _WriteConsoleA@20 seems to pop its parameters, so there is no need to adjust esp");
         }
 
         private void EmitLabel(string labelName)
@@ -369,7 +409,6 @@ extern _ExitProcess@4
 %define STDOUT_HANDLE_PARAM -11
 %define STDIN_HANDLE_PARAM -10
 %define BUFFER_SIZE 256
-%define MAX_STRING_LEN 255
 
 section .bss
     numCharsRead:    resd 1
@@ -401,16 +440,37 @@ _main:
 print_integer:
     push    ebp
     mov     ebp, esp
-    sub     esp, 4
-    
-    pop     eax
-    add     esp, 4
-    leave   
+    mov     eax, [ebp+8]        ; Load parameter into eax
+    mov     ebx, buffer+BUFFER_SIZE ; Pointer into output buffer
+    cmp     eax, 0              ; Is the number nonnegative?
+    jge     print_integer_loop  ; Skip the negation if it is
+    neg     eax                 ; Negate the number to make it positive
+print_integer_loop:
+    mov     edx, 0              ; Set up for division
+    mov     ecx, 10             ; Denominator
+    idiv    ecx                 ; Divide
+    add     edx, '0'            ; Turn the modulo into an ASCII digit
+    dec     ebx                 ; Move one step left in the output buffer
+    mov     [ebx], dl           ; Copy digit to output buffer
+    cmp     eax, 0              ; Loop if there is anything left of the number
+    jne     print_integer_loop  ; -'-
+    cmp     [ebp+8], dword 0    ; Is the number nonnegative?
+    jge     print_integer_sign_done ; Skip the sign if it is
+    dec     ebx                 ; Move one step left in the output buffer
+    mov     [ebx], byte '-'     ; Copy minus sign to output buffer
+print_integer_sign_done:
+    push    dword 0             ; Param 4 for _WriteConsoleA@20: Unused
+    push    numCharsWritten     ; Param 3 for _WriteConsoleA@20: Pointer to number of characters written
+    push    buffer+BUFFER_SIZE  ; Param 2 for _WriteConsoleA@20: Number of characters to write
+    sub     [esp], ebx          ; -'-
+    push    ebx                     ; Param 1 for _WriteConsoleA@20: Start of buffer to write
+    push    dword [stdOutHandle]    ; Param 0 for _WriteConsoleA@20: Handle to file descriptor to write to
+    call    _WriteConsoleA@20       ; Make the call to _WriteConsoleA@20
+    leave                       ; Note that _WriteConsoleA@20 is popping its parameters, so there's no need to adjust esp (and we're about to return anyway)
     ret
 
 end:
-    push    dword 0
-    call    _ExitProcess@4
+    call    _ExitProcess@4      ; Exit, and use TOS (the return value from Main) as the exit code
 
 section .data
     str:    db 'Hello world!',0x0d,0x0a
