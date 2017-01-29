@@ -46,10 +46,7 @@ namespace Compiler
             EmitBlankLine();
             EmitLabelComment("Function: " + function.Name.Name);
             EmitLabel("fun_" + function.Name.Name);
-            //TODO: Replace with enter
-            Emit("push", "ebp");
-            Emit("mov", "ebp", "esp");
-            Emit("sub", "esp", GetStackSpaceForArguments().ToString());
+            Emit("enter", GetStackSpaceForArguments().ToString(), "0");
 
             function.Body.Accept(this);
         }
@@ -69,7 +66,6 @@ namespace Compiler
             statement.Expression.Accept(this);
             EmitComment("Return");
             Emit("pop", "eax");
-            Emit("add", "esp", GetStackSpaceForArguments().ToString()); //TODO: Not really necessary
             Emit("leave");
             Emit("ret");
         }
